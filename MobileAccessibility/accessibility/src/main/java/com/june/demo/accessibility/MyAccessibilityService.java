@@ -2,6 +2,7 @@ package com.june.demo.accessibility;
 
 import android.accessibilityservice.AccessibilityService;
 import android.graphics.Rect;
+import android.os.Build;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -9,7 +10,11 @@ import android.view.accessibility.AccessibilityNodeInfo;
 public class MyAccessibilityService extends AccessibilityService {
     private static final String TAG = MyAccessibilityService.class.getSimpleName();
 
+    // webview bounds
     private Rect webRect;
+
+    // dialog bounds
+    private Rect dialogBtnRect;
 
     public MyAccessibilityService() {
     }
@@ -28,6 +33,9 @@ public class MyAccessibilityService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         String pkgName = event.getPackageName().toString();
+        if(!"com.songheng.eastnews".equals(pkgName))
+            return;
+
         int eventType = event.getEventType();
         Log.e("111111111111", pkgName + " " + eventType);
 
@@ -36,28 +44,73 @@ public class MyAccessibilityService extends AccessibilityService {
                 = getRootInActiveWindow();
         listNodeInfo(rootNodeInfo);
 
+        if (webRect == null) {
+            AccessibilityNodeInfo webNode = AccessibilityUtil.findViewByClassname(rootNodeInfo, "android.webkit.WebView");
+            if (webNode != null) {
+                for (int i = 0; i < webNode.getChildCount(); i++) {
+                    AccessibilityNodeInfo child = webNode.getChild(i);
+                    if(child == null)
+                        continue;
+
+                    if("android.webkit.WebView".equals(child.getClassName())) {
+                        Rect rect = AccessibilityUtil.getRect(webNode);
+                        if (rect != null) {
+                            webRect = rect;
+                            Log.d("ddddd", "dddd web bounds " + rect);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (dialogBtnRect == null) {
+            // 对话框 立即领取，立即翻倍 left:150 top:1311 right:930 bottom:1449
+            AccessibilityNodeInfo gainBtn = AccessibilityUtil.getNodeInfoById(rootNodeInfo, "gainBtn");
+            if (gainBtn != null) {
+                Rect rect = AccessibilityUtil.getRect(gainBtn);
+                if (rect != null) {
+                    dialogBtnRect = rect;
+                    Log.d("ddddd", "dddd dialog btn bounds " + rect);
+                }
+            }
+        }
+
         switch (eventType) {
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
 
-                AccessibilityUtil.clickAll(rootNodeInfo);
+//                AccessibilityUtil.clickAll(rootNodeInfo);
                 break;
 
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
-                AccessibilityNodeInfo webviewNode = findWebView(rootNodeInfo);
-                if (webviewNode != null) {
-                    Log.e(TAG, "开始遍历webview中的view");
-                    getWebNode(webviewNode);
+
+//                AccessibilityUtil.clickAll(rootNodeInfo);
+
+                // 点击弹出框
+                AccessibilityNodeInfo gainBtn = AccessibilityUtil.getNodeInfoById(rootNodeInfo, "gainBtn");
+                if (gainBtn != null) {
+                    gainBtn.performAction(AccessibilityNodeInfo.ACTION_CLICK);
                 }
 
-                AccessibilityUtil.clickAll(rootNodeInfo);
+                AccessibilityUtil.closeAdByDesc(rootNodeInfo);
 
+                if (AccessibilityUtil.isAdShown(rootNodeInfo)) {
+                    Log.d("ggggg", "正在播放广告。。。");
+
+                } else {
+                    if (webRect != null) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            MyAccessibility.clickCenter(this, webRect);
+                        }
+                    }
+                }
                 break;
         }
 
     }
 
+    // 遍历所有
     private void listNodeInfo(AccessibilityNodeInfo nodeInfo) {
-        if(nodeInfo == null)
+        if (nodeInfo == null)
             return;
 
         for (int i = 0; i < nodeInfo.getChildCount(); i++) {
@@ -71,7 +124,7 @@ public class MyAccessibilityService extends AccessibilityService {
                 Log.e("cccccc", "ClassName:" + child.getClassName() + " Desc:" + child.getContentDescription() + " Text:" + child.getText() + " ResId:" + child.getViewIdResourceName());
 
                 // 立即翻倍，观看视频 领取翻倍卡，
-                if("gainBtn".equals(child.getViewIdResourceName())) {
+                if ("gainBtn".equals(child.getViewIdResourceName())) {
                     Rect rect = new Rect();
                     child.getBoundsInScreen(rect);
 //                    child.performAction(AccessibilityNodeInfo.ACTION_CLICK);
@@ -81,46 +134,6 @@ public class MyAccessibilityService extends AccessibilityService {
         }
     }
 
-    private AccessibilityNodeInfo findWebView(AccessibilityNodeInfo nodeInfo) {
-        if(nodeInfo == null)
-            return null;
-
-        for (int i = 0; i < nodeInfo.getChildCount(); i++) {
-            AccessibilityNodeInfo child = nodeInfo.getChild(i);
-            if (child == null)
-                continue;
-
-            if ("android.webkit.WebView".equals(child.getClassName().toString())) {
-                Log.d(TAG, "找到了");
-                return child;
-            } else {
-                if (child.getChildCount() > 0)
-                    return findWebView(child);
-            }
-        }
-        return null;
-    }
-
-    private AccessibilityNodeInfo getWebNode(AccessibilityNodeInfo nodeInfo) {
-        for (int i = 0; i < nodeInfo.getChildCount(); i++) {
-            AccessibilityNodeInfo child = nodeInfo.getChild(i);
-            if (child == null)
-                continue;
-
-            if(webRect == null){
-                Rect tmp = new Rect();
-                child.getBoundsInScreen(tmp);
-                if(! (tmp.left == 0 && tmp.top == 0 && tmp.right == 0 && tmp.bottom == 0)){
-                    webRect = tmp;
-                }
-            }
-
-
-            Log.e("bbbbbbbb", child.getClassName() + " " + child.getContentDescription() + " " + child.getText() + " " + child.getViewIdResourceName()
-                    + " " + webRect.left + " " + webRect.top + " " + webRect.right + " " + webRect.bottom);
-        }
-        return null;
-    }
 
     @Override
     public void onInterrupt() {
