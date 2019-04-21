@@ -1,0 +1,8 @@
+
+广告
+ClassName:android.widget.ImageView Desc:null Text:null ResId:com.songheng.eastnews:id/apm
+ClassName:android.widget.ImageView Desc:null Text:null ResId:com.songheng.eastnews:id/apo
+ClassName:android.widget.TextView Desc:null Text:麦游捕鱼 ResId:com.songheng.eastnews:id/ao8
+ClassName:android.widget.ImageView Desc:null Text:null ResId:com.songheng.eastnews:id/app
+ClassName:android.widget.TextView Desc:null Text:刺激！玩了这捕鱼老公天天赚金币，班也不上了 ResId:com.songheng.eastnews:id/ki
+ClassName:android.widget.TextView Desc:null Text:立即下载 ResId:com.songheng.eastnews:id/apr

@@ -230,4 +230,30 @@ public class AccessibilityUtil {
         }
         return null;
     }
+
+//    android.widget.Button Desc:null Text:取消 ResId:com.android.packageinstaller:id/cancel_button
+public static AccessibilityNodeInfo findCancelButtonOnPackageinstaller(AccessibilityNodeInfo nodeInfo) {
+    if (nodeInfo == null)
+        return null;
+
+    if (nodeInfo.getText() != null && nodeInfo.getText().toString().contains("取消")
+            && "android.widget.Button".equals(nodeInfo.getClassName())
+            && "com.android.packageinstaller:id/cancel_button".equals(nodeInfo.getViewIdResourceName())) {
+        return nodeInfo;
+    }
+
+    if (nodeInfo.getChildCount() > 0) {
+        for (int i = 0; i < nodeInfo.getChildCount(); i++) {
+            AccessibilityNodeInfo child = nodeInfo.getChild(i);
+            if (child == null)
+                continue;
+
+            AccessibilityNodeInfo res = findCancelButtonOnPackageinstaller(child);
+            if (res != null)
+                return res;
+        }
+    }
+    return null;
+}
+
 }
